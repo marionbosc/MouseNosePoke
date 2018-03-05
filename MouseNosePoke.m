@@ -8,7 +8,7 @@ global TaskParameters
 TaskParameters = BpodSystem.ProtocolSettings;
 if isempty(fieldnames(TaskParameters))
     %general
-    TaskParameters.GUI.Ports_LMR = '123';
+    TaskParameters.GUI.Ports_LMR = '134';
     TaskParameters.GUI.FI = 1; % (s)
     TaskParameters.GUI.VI = false;
     TaskParameters.GUIMeta.VI.Style = 'checkbox';
@@ -90,8 +90,7 @@ BpodSystem.GUIHandles.OutcomePlot.HandleST = axes('Position',         [5*.05 + 4
 MouseNosePoke_PlotSideOutcome2(BpodSystem.GUIHandles.OutcomePlot,'init');
 % BpodNotebook('init');
 
-% This code initializes the Total Reward Display plugin, and updates it on each trial. 
-TotalRewardDisplay('init');
+
 %% Main loop
 RunSession = true;
 iTrial = 1;
@@ -261,23 +260,24 @@ end
 
 if any(strncmp('water_L',statesThisTrial,7))
     BpodSystem.Data.Custom.ChoiceLeft(iTrial) = 1;
-    TotalRewardDisplay('add', TaskParameters.GUI.rewardAmount); % and updates it on each trial.
+    BpodSystem.Data.Custom.Rewarded(iTrial) = true;
 elseif any(strncmp('water_R',statesThisTrial,7))
     BpodSystem.Data.Custom.ChoiceLeft(iTrial) = 0;
-    TotalRewardDisplay('add', TaskParameters.GUI.rewardAmount); % and updates it on each trial.
+    BpodSystem.Data.Custom.Rewarded(iTrial) = true;
 elseif any(strcmp('EarlyWithdrawal',statesThisTrial))
     BpodSystem.Data.Custom.EarlyWithdrawal(iTrial) = true;
 end
 if any(strcmp('water_LJackpot',statesThisTrial)) || any(strcmp('water_RJackpot',statesThisTrial))
     BpodSystem.Data.Custom.Jackpot(iTrial) = true;
-    TotalRewardDisplay('add', TaskParameters.GUI.rewardAmount); % and updates it on each trial.
+    BpodSystem.Data.Custom.Rewarded(iTrial) = true;
 end
-
 
 %% initialize next trial values
 BpodSystem.Data.Custom.ChoiceLeft(iTrial+1) = NaN;
 BpodSystem.Data.Custom.EarlyWithdrawal(iTrial+1) = false;
 BpodSystem.Data.Custom.Jackpot(iTrial+1) = false;
+BpodSystem.Data.Custom.ST(iTrial+1) = NaN;
+BpodSystem.Data.Custom.Rewarded(iTrial+1) = false;
 
 %stimuli
 if ~BpodSystem.EmulatorMode

@@ -11,24 +11,15 @@ switch Action
         if nargin >= 3 %custom number of trials
             nTrialsToShow =varargin{1};
         end
-%         axes(AxesHandle);
         axes(AxesHandles.HandleOutcome);
         %plot in specified axes
-%         BpodSystem.GUIHandles.CurrentTrialCircle = line(-1,0.5, 'LineStyle','none','Marker','o','MarkerEdge','k','MarkerFace',[1 1 1], 'MarkerSize',6);
-%         BpodSystem.GUIHandles.CurrentTrialCross = line(-1,0.5, 'LineStyle','none','Marker','+','MarkerEdge','k','MarkerFace',[1 1 1], 'MarkerSize',6);
-%         BpodSystem.GUIHandles.RewardedL = line(-1,1, 'LineStyle','none','Marker','o','MarkerEdge','g','MarkerFace','g', 'MarkerSize',6);
-%         BpodSystem.GUIHandles.RewardedR = line(-1,0, 'LineStyle','none','Marker','o','MarkerEdge','g','MarkerFace','g', 'MarkerSize',6);
-%         BpodSystem.GUIHandles.EarlyWithdrawal = line(-1,0, 'LineStyle','none','Marker','d','MarkerEdge','none','MarkerFace','b', 'MarkerSize',6);
-%         BpodSystem.GUIHandles.Jackpot = line(-1,0, 'LineStyle','none','Marker','x','MarkerEdge','r','MarkerFace','r', 'MarkerSize',7);
         BpodSystem.GUIHandles.OutcomePlot.CurrentTrialCircle = line(-1,0.5, 'LineStyle','none','Marker','o','MarkerEdge','k','MarkerFace',[1 1 1], 'MarkerSize',6);
         BpodSystem.GUIHandles.OutcomePlot.CurrentTrialCross = line(-1,0.5, 'LineStyle','none','Marker','+','MarkerEdge','k','MarkerFace',[1 1 1], 'MarkerSize',6);
         BpodSystem.GUIHandles.OutcomePlot.RewardedL = line(-1,1, 'LineStyle','none','Marker','o','MarkerEdge','g','MarkerFace','g', 'MarkerSize',6);
         BpodSystem.GUIHandles.OutcomePlot.RewardedR = line(-1,0, 'LineStyle','none','Marker','o','MarkerEdge','g','MarkerFace','g', 'MarkerSize',6);
         BpodSystem.GUIHandles.OutcomePlot.EarlyWithdrawal = line(-1,0, 'LineStyle','none','Marker','d','MarkerEdge','none','MarkerFace','b', 'MarkerSize',6);
         BpodSystem.GUIHandles.OutcomePlot.Jackpot = line(-1,0, 'LineStyle','none','Marker','x','MarkerEdge','r','MarkerFace','r', 'MarkerSize',7);
-%         set(AxesHandle,'TickDir', 'out','YLim', [-1, 2],'XLim',[0,nTrialsToShow], 'YTick', [0 1],'YTickLabel', {'Right','Left'}, 'FontSize', 16);
-%         xlabel(AxesHandle, 'Trial#', 'FontSize', 18);
-%         hold(AxesHandle, 'on');
+        BpodSystem.GUIHandles.OutcomePlot.CumRwd = text(1,1,'0mL','verticalalignment','bottom','horizontalalignment','center');
         set(AxesHandles.HandleOutcome,'TickDir', 'out','YLim', [-1, 2],'XLim',[0,nTrialsToShow], 'YTick', [0 1],'YTickLabel', {'Right','Left'}, 'FontSize', 16);
         xlabel(AxesHandles.HandleOutcome, 'Trial#', 'FontSize', 18);
         hold(AxesHandles.HandleOutcome, 'on');
@@ -53,11 +44,17 @@ switch Action
         ChoiceLeft = BpodSystem.Data.Custom.ChoiceLeft;
         
         % recompute xlim
-%         [mn, ~] = rescaleX(AxesHandle,CurrentTrial,nTrialsToShow);
         [mn, ~] = rescaleX(AxesHandles.HandleOutcome,CurrentTrial,nTrialsToShow);
         
-%         set(BpodSystem.GUIHandles.CurrentTrialCircle, 'xdata', CurrentTrial, 'ydata', .5);
-%         set(BpodSystem.GUIHandles.CurrentTrialCross, 'xdata', CurrentTrial, 'ydata', .5);
+        %Cumulative Reward Amount
+        R = BpodSystem.Data.Custom.RewardMagnitude;
+        ndxRwd = BpodSystem.Data.Custom.Rewarded;
+        C = zeros(size(R)); C(BpodSystem.Data.Custom.ChoiceLeft==1&ndxRwd,1) = 1; C(BpodSystem.Data.Custom.ChoiceLeft==0&ndxRwd,2) = 1;
+        R = R.*C;
+        set(BpodSystem.GUIHandles.OutcomePlot.CumRwd, 'position', [CurrentTrial+1 1], 'string', ...
+            [num2str(sum(R(:))) ' microL']);
+        clear R C
+        
         set(BpodSystem.GUIHandles.OutcomePlot.CurrentTrialCircle, 'xdata', CurrentTrial, 'ydata', .5);
         set(BpodSystem.GUIHandles.OutcomePlot.CurrentTrialCross, 'xdata', CurrentTrial, 'ydata', .5);
        
@@ -67,12 +64,10 @@ switch Action
             %Plot Rewarded Left
             ndxRwdL = ChoiceLeft(indxToPlot) == 1;
             Xdata = indxToPlot(ndxRwdL); Ydata = ones(1,sum(ndxRwdL));
-%             set(BpodSystem.GUIHandles.RewardedL, 'xdata', Xdata, 'ydata', Ydata);
             set(BpodSystem.GUIHandles.OutcomePlot.RewardedL, 'xdata', Xdata, 'ydata', Ydata);
             %Plot Rewarded Right
             ndxRwdR = ChoiceLeft(indxToPlot) == 0;
             Xdata = indxToPlot(ndxRwdR); Ydata = zeros(1,sum(ndxRwdR));
-%             set(BpodSystem.GUIHandles.RewardedR, 'xdata', Xdata, 'ydata', Ydata);
             set(BpodSystem.GUIHandles.OutcomePlot.RewardedR, 'xdata', Xdata, 'ydata', Ydata);
         end
         if ~isempty(BpodSystem.Data.Custom.EarlyWithdrawal)
@@ -80,7 +75,6 @@ switch Action
             ndxEarly = BpodSystem.Data.Custom.EarlyWithdrawal(indxToPlot);
             XData = indxToPlot(ndxEarly);
             YData = 0.5*ones(1,sum(ndxEarly));
-%             set(BpodSystem.GUIHandles.EarlyWithdrawal, 'xdata', XData, 'ydata', YData);
             set(BpodSystem.GUIHandles.OutcomePlot.EarlyWithdrawal, 'xdata', XData, 'ydata', YData);
         end
         if ~isempty(BpodSystem.Data.Custom.Jackpot)
@@ -88,11 +82,11 @@ switch Action
             ndxJackpot = BpodSystem.Data.Custom.Jackpot(indxToPlot);
             XData = indxToPlot(ndxJackpot);
             YData = 0.5*ones(1,sum(ndxJackpot));
-%             set(BpodSystem.GUIHandles.Jackpot, 'xdata', XData, 'ydata', YData);
             set(BpodSystem.GUIHandles.OutcomePlot.Jackpot, 'xdata', XData, 'ydata', YData);
         end
         
         % Trial rate
+%         cla(AxesHandles.HandleTrialRate)
         BpodSystem.GUIHandles.OutcomePlot.TrialRate.XData = (BpodSystem.Data.TrialStartTimestamp-min(BpodSystem.Data.TrialStartTimestamp))/60;
         BpodSystem.GUIHandles.OutcomePlot.TrialRate.YData = 1:numel(BpodSystem.Data.Custom.ChoiceLeft);
         
@@ -106,7 +100,7 @@ switch Action
         BpodSystem.GUIHandles.OutcomePlot.HistST.BinWidth = 50;
         BpodSystem.GUIHandles.OutcomePlot.HistST.FaceColor = 'b';
         BpodSystem.GUIHandles.OutcomePlot.HistST.EdgeColor = 'none';
-        EarlyP = sum(BpodSystem.Data.Custom.EarlyWithdrawal)/sum(~BpodSystem.Data.Custom.FixBroke);
+        EarlyP = sum(BpodSystem.Data.Custom.EarlyWithdrawal)/sum(~isnan(BpodSystem.Data.Custom.ChoiceLeft));
         cornertext(AxesHandles.HandleST,sprintf('P=%1.2f',EarlyP))
 
 end
