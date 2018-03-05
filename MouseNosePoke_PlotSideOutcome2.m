@@ -24,10 +24,9 @@ switch Action
         xlabel(AxesHandles.HandleOutcome, 'Trial#', 'FontSize', 18);
         hold(AxesHandles.HandleOutcome, 'on');
 
-
         %% Trial rate
         hold(AxesHandles.HandleTrialRate,'on')
-        BpodSystem.GUIHandles.OutcomePlot.TrialRate = line(AxesHandles.HandleTrialRate,[0],[0], 'LineStyle','-','Color','k','Visible','off'); %#ok<NBRAK>
+        BpodSystem.GUIHandles.OutcomePlot.TrialRate = line(AxesHandles.HandleTrialRate,[0],[0], 'LineStyle','-','Color','k','Visible','on'); %#ok<NBRAK>
         AxesHandles.HandleTrialRate.XLabel.String = 'Time (min)'; % FIGURE OUT UNIT
         AxesHandles.HandleTrialRate.YLabel.String = 'nTrials';
         AxesHandles.HandleTrialRate.Title.String = 'Trial rate';
@@ -86,11 +85,14 @@ switch Action
         end
         
         % Trial rate
-%         cla(AxesHandles.HandleTrialRate)
+        BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate.Visible = 'on';
+        set(get(BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate,'Children'),'Visible','on');
         BpodSystem.GUIHandles.OutcomePlot.TrialRate.XData = (BpodSystem.Data.TrialStartTimestamp-min(BpodSystem.Data.TrialStartTimestamp))/60;
-        BpodSystem.GUIHandles.OutcomePlot.TrialRate.YData = 1:numel(BpodSystem.Data.Custom.ChoiceLeft);
+        BpodSystem.GUIHandles.OutcomePlot.TrialRate.YData = 1:numel(BpodSystem.Data.Custom.ChoiceLeft(1:end-1));
         
         % SamplingTime
+        BpodSystem.GUIHandles.OutcomePlot.HandleST.Visible = 'on';
+        set(get(BpodSystem.GUIHandles.OutcomePlot.HandleST,'Children'),'Visible','on');
         cla(AxesHandles.HandleST)
         BpodSystem.GUIHandles.OutcomePlot.HistSTEarly = histogram(AxesHandles.HandleST,BpodSystem.Data.Custom.ST(BpodSystem.Data.Custom.EarlyWithdrawal)*1000);
         BpodSystem.GUIHandles.OutcomePlot.HistSTEarly.BinWidth = 50;

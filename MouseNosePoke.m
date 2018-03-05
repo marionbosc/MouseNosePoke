@@ -80,16 +80,11 @@ if ~BpodSystem.EmulatorMode
 end
 
 %% Initialize plots
-% BpodSystem.ProtocolFigures.SideOutcomePlotFig = figure('Position', [200 200 1000 200],'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
 BpodSystem.ProtocolFigures.SideOutcomePlotFig = figure('Position', TaskParameters.Figures.OutcomePlot.Position,'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
-% BpodSystem.GUIHandles.SideOutcomePlot = axes('Position', [.075 .3 .89 .6]);
 BpodSystem.GUIHandles.OutcomePlot.HandleOutcome = axes('Position',    [  .055          .15 .91 .3]);
-BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate = axes('Position',  [3*.05 + 2*.08   .6  .1  .3], 'Visible', 'on');
-BpodSystem.GUIHandles.OutcomePlot.HandleST = axes('Position',         [5*.05 + 4*.08   .6  .1  .3], 'Visible', 'on');
-% MouseNosePoke_PlotSideOutcome2(BpodSystem.GUIHandles.SideOutcomePlot,'init');
+BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate = axes('Position',  [3*.05 + 2*.08   .6  .1  .3], 'Visible', 'off');
+BpodSystem.GUIHandles.OutcomePlot.HandleST = axes('Position',         [5*.05 + 4*.08   .6  .1  .3], 'Visible', 'off');
 MouseNosePoke_PlotSideOutcome2(BpodSystem.GUIHandles.OutcomePlot,'init');
-% BpodNotebook('init');
-
 
 %% Main loop
 RunSession = true;
@@ -112,8 +107,8 @@ while RunSession
     end
     
     updateCustomDataFields(iTrial)
-    iTrial = iTrial + 1;
     MouseNosePoke_PlotSideOutcome2(BpodSystem.GUIHandles.OutcomePlot,'update',iTrial);
+    iTrial = iTrial + 1;    
 end
 end
 
