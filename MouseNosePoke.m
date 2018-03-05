@@ -1,4 +1,4 @@
-function NosePoke()
+function MouseNosePoke()
 % Learning to Nose Poke side ports
 
 global BpodSystem
@@ -31,7 +31,7 @@ if isempty(fieldnames(TaskParameters))
     TaskParameters.GUIMeta.SampleTime.Style = 'text';
     TaskParameters.GUIPanels.Sampling = {'PlayStimulus','MinSampleTime','MaxSampleTime','AutoIncrSample','MinSampleIncr','MinSampleDecr','EarlyWithdrawalTimeOut','EarlyWithdrawalNoise','SampleTime'};
     %Reward
-    TaskParameters.GUI.rewardAmount = 30;
+    TaskParameters.GUI.rewardAmount = 5;
     TaskParameters.GUI.Deplete = true;
     TaskParameters.GUIMeta.Deplete.Style = 'checkbox';
     TaskParameters.GUI.DepleteRate = 0.8;
@@ -42,6 +42,7 @@ if isempty(fieldnames(TaskParameters))
     TaskParameters.GUIMeta.JackpotTime.Style = 'text';
         TaskParameters.GUIPanels.Reward = {'rewardAmount','Deplete','DepleteRate','Jackpot','JackpotMin','JackpotTime'};
     TaskParameters.GUI = orderfields(TaskParameters.GUI);
+    TaskParameters.Figures.OutcomePlot.Position = [200, 200, 1000, 400];
 end
 BpodParameterGUI('init', TaskParameters);
 
@@ -63,7 +64,6 @@ BpodSystem.Data.Custom.FreqStimulus = getFreqStimulus(BpodSystem.Data.Custom.Max
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler';
 
 %% Configuring PulsePal
-%% Configuring PulsePal
 load PulsePalParamStimulus.mat
 load PulsePalParamFeedback.mat
 BpodSystem.Data.Custom.PulsePalParamStimulus=PulsePalParamStimulus;
@@ -79,13 +79,19 @@ if ~BpodSystem.EmulatorMode
     end
 end
 
-
 %% Initialize plots
 BpodSystem.ProtocolFigures.SideOutcomePlotFig = figure('Position', [200 200 1000 200],'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
+% BpodSystem.ProtocolFigures.SideOutcomePlotFig = figure('Position', TaskParameters.Figures.OutcomePlot.Position,'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
 BpodSystem.GUIHandles.SideOutcomePlot = axes('Position', [.075 .3 .89 .6]);
-NosePoke_PlotSideOutcome(BpodSystem.GUIHandles.SideOutcomePlot,'init');
+% BpodSystem.GUIHandles.OutcomePlot.HandleOutcome = axes('Position',    [  .055          .15 .91 .3]);
+% BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate = axes('Position',  [3*.05 + 2*.08   .6  .1  .3], 'Visible', 'off');
+% BpodSystem.GUIHandles.OutcomePlot.HandleST = axes('Position',         [5*.05 + 4*.08   .6  .1  .3], 'Visible', 'off');
+MouseNosePoke_PlotSideOutcome(BpodSystem.GUIHandles.SideOutcomePlot,'init');
+% MainPlot(BpodSystem.GUIHandles.OutcomePlot,'init');
 % BpodNotebook('init');
 
+% This code initializes the Total Reward Display plugin, and updates it on each trial. 
+TotalRewardDisplay('init');
 %% Main loop
 RunSession = true;
 iTrial = 1;
@@ -108,7 +114,7 @@ while RunSession
     
     updateCustomDataFields(iTrial)
     iTrial = iTrial + 1;
-    NosePoke_PlotSideOutcome(BpodSystem.GUIHandles.SideOutcomePlot,'update',iTrial);
+    MouseNosePoke_PlotSideOutcome(BpodSystem.GUIHandles.SideOutcomePlot,'update',iTrial);
 end
 end
 
@@ -132,7 +138,7 @@ RightValve = 2^(RightPort-1);
 LeftValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,1), LeftPort);
 RightValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,2), RightPort);
 
-JackpotFactor = max(2,10 - sum(BpodSystem.Data.Custom.Jackpot));
+JackpotFactor = max(2,5 - sum(BpodSystem.Data.Custom.Jackpot)); % Rat: JackpotFactor = max(2,10 - sum(BpodSystem.Data.Custom.Jackpot));
 LeftValveTimeJackpot  = JackpotFactor*GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,1), LeftPort);
 RightValveTimeJackpot  = JackpotFactor*GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,2), RightPort);
 
@@ -150,7 +156,7 @@ elseif TaskParameters.GUI.PlayStimulus == 3 %freq
     StimStart2Output = {};
 end
 
-if TaskParameters.GUI.EarlyWithdrawalNoise;
+if TaskParameters.GUI.EarlyWithdrawalNoise
     PunishSoundAction=11;
 else
     PunishSoundAction=0;
@@ -255,13 +261,16 @@ end
 
 if any(strncmp('water_L',statesThisTrial,7))
     BpodSystem.Data.Custom.ChoiceLeft(iTrial) = 1;
+    TotalRewardDisplay('add', TaskParameters.GUI.rewardAmount); % and updates it on each trial.
 elseif any(strncmp('water_R',statesThisTrial,7))
     BpodSystem.Data.Custom.ChoiceLeft(iTrial) = 0;
+    TotalRewardDisplay('add', TaskParameters.GUI.rewardAmount); % and updates it on each trial.
 elseif any(strcmp('EarlyWithdrawal',statesThisTrial))
     BpodSystem.Data.Custom.EarlyWithdrawal(iTrial) = true;
 end
 if any(strcmp('water_LJackpot',statesThisTrial)) || any(strcmp('water_RJackpot',statesThisTrial))
     BpodSystem.Data.Custom.Jackpot(iTrial) = true;
+    TotalRewardDisplay('add', TaskParameters.GUI.rewardAmount); % and updates it on each trial.
 end
 
 
@@ -307,8 +316,8 @@ end
 
 %increase sample time
 if TaskParameters.GUI.AutoIncrSample
-    History = 50;
-    Crit = 0.8;
+    History = 10; % Rat: History = 50
+    Crit = 0.6; % Rat: Crit = 0.8
     if iTrial<5
         ConsiderTrials = iTrial;
     else
@@ -319,13 +328,13 @@ if TaskParameters.GUI.AutoIncrSample
         if ~BpodSystem.Data.Custom.EarlyWithdrawal(iTrial)
             BpodSystem.Data.Custom.SampleTime(iTrial+1) = min(TaskParameters.GUI.MaxSampleTime,max(TaskParameters.GUI.MinSampleTime,BpodSystem.Data.Custom.SampleTime(iTrial) + TaskParameters.GUI.MinSampleIncr));
         else
-             BpodSystem.Data.Custom.SampleTime(iTrial+1) =  min(TaskParameters.GUI.MaxSampleTime,max(TaskParameters.GUI.MinSampleTime,BpodSystem.Data.Custom.SampleTime(iTrial)));
+            BpodSystem.Data.Custom.SampleTime(iTrial+1) = min(TaskParameters.GUI.MaxSampleTime,max(TaskParameters.GUI.MinSampleTime,BpodSystem.Data.Custom.SampleTime(iTrial)));
         end
     elseif sum(~BpodSystem.Data.Custom.EarlyWithdrawal(ConsiderTrials))/length(ConsiderTrials) < Crit/2
         if BpodSystem.Data.Custom.EarlyWithdrawal(iTrial)
             BpodSystem.Data.Custom.SampleTime(iTrial+1) = max(TaskParameters.GUI.MinSampleTime,min(TaskParameters.GUI.MaxSampleTime,BpodSystem.Data.Custom.SampleTime(iTrial) - TaskParameters.GUI.MinSampleDecr));
         else
-            BpodSystem.Data.Custom.SampleTime(iTrial+1) =   min(TaskParameters.GUI.MaxSampleTime,max(TaskParameters.GUI.MinSampleTime,BpodSystem.Data.Custom.SampleTime(iTrial)));
+            BpodSystem.Data.Custom.SampleTime(iTrial+1) = min(TaskParameters.GUI.MaxSampleTime,max(TaskParameters.GUI.MinSampleTime,BpodSystem.Data.Custom.SampleTime(iTrial)));
         end
     else
         BpodSystem.Data.Custom.SampleTime(iTrial+1) =  BpodSystem.Data.Custom.SampleTime(iTrial);
@@ -333,9 +342,9 @@ if TaskParameters.GUI.AutoIncrSample
 else
     BpodSystem.Data.Custom.SampleTime(iTrial+1) = TaskParameters.GUI.MinSampleTime;
 end
-% if BpodSystem.Data.Custom.Jackpot(iTrial)
-%     BpodSystem.Data.Custom.SampleTime(iTrial+1) = BpodSystem.Data.Custom.SampleTime(iTrial+1)+0.05*TaskParameters.GUI.JackpotTime;
-% end
+if BpodSystem.Data.Custom.Jackpot(iTrial)
+    BpodSystem.Data.Custom.SampleTime(iTrial+1) = BpodSystem.Data.Custom.SampleTime(iTrial+1)+0.05*TaskParameters.GUI.JackpotTime;
+end
 TaskParameters.GUI.SampleTime = BpodSystem.Data.Custom.SampleTime(iTrial+1);
 
 %send bpod status to server
