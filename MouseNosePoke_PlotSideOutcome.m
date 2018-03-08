@@ -36,6 +36,12 @@ switch Action
         AxesHandles.HandleST.YLabel.String = 'trial counts';
         AxesHandles.HandleST.Title.String = 'Stim sampling time';
         
+        %% MT histogram
+        hold(AxesHandles.HandleMT,'on')
+        AxesHandles.HandleMT.XLabel.String = 'Time (ms)';
+        AxesHandles.HandleMT.YLabel.String = 'trial counts';
+        AxesHandles.HandleMT.Title.String = 'Mouvement time';
+        
     case 'update'
         
         CurrentTrial = varargin{1};
@@ -58,7 +64,7 @@ switch Action
        
         %Plot past trials
         if ~isempty(ChoiceLeft)
-            indxToPlot = mn:CurrentTrial-1;
+            indxToPlot = mn:CurrentTrial;
             %Plot Rewarded Left
             ndxRwdL = ChoiceLeft(indxToPlot) == 1;
             Xdata = indxToPlot(ndxRwdL); Ydata = ones(1,sum(ndxRwdL));
@@ -69,14 +75,14 @@ switch Action
             set(BpodSystem.GUIHandles.OutcomePlot.RewardedR, 'xdata', Xdata, 'ydata', Ydata);
         end
         if ~isempty(BpodSystem.Data.Custom.EarlyWithdrawal)
-            indxToPlot = mn:CurrentTrial-1;
+            indxToPlot = mn:CurrentTrial;
             ndxEarly = BpodSystem.Data.Custom.EarlyWithdrawal(indxToPlot);
             XData = indxToPlot(ndxEarly);
             YData = 0.5*ones(1,sum(ndxEarly));
             set(BpodSystem.GUIHandles.OutcomePlot.EarlyWithdrawal, 'xdata', XData, 'ydata', YData);
         end
         if ~isempty(BpodSystem.Data.Custom.Jackpot)
-            indxToPlot = mn:CurrentTrial-1;
+            indxToPlot = mn:CurrentTrial;
             ndxJackpot = BpodSystem.Data.Custom.Jackpot(indxToPlot);
             XData = indxToPlot(ndxJackpot);
             YData = 0.5*ones(1,sum(ndxJackpot));
@@ -101,8 +107,23 @@ switch Action
         BpodSystem.GUIHandles.OutcomePlot.HistST.BinWidth = 50;
         BpodSystem.GUIHandles.OutcomePlot.HistST.FaceColor = 'b';
         BpodSystem.GUIHandles.OutcomePlot.HistST.EdgeColor = 'none';
-        EarlyP = sum(BpodSystem.Data.Custom.EarlyWithdrawal)/sum(~isnan(BpodSystem.Data.Custom.ChoiceLeft));
+        BpodSystem.GUIHandles.OutcomePlot.HistSTJackpot = histogram(AxesHandles.HandleST,BpodSystem.Data.Custom.ST(BpodSystem.Data.Custom.Jackpot)*1000);
+        BpodSystem.GUIHandles.OutcomePlot.HistSTJackpot.BinWidth = 50;
+        BpodSystem.GUIHandles.OutcomePlot.HistSTJackpot.FaceColor = 'g';
+        BpodSystem.GUIHandles.OutcomePlot.HistSTJackpot.EdgeColor = 'none';
+        EarlyP = sum(BpodSystem.Data.Custom.EarlyWithdrawal)/size(BpodSystem.Data.Custom.ChoiceLeft,2);
         cornertext(AxesHandles.HandleST,sprintf('P=%1.2f',EarlyP))
+        
+        % MouvementTime
+        BpodSystem.GUIHandles.OutcomePlot.HandleMT.Visible = 'on';
+        set(get(BpodSystem.GUIHandles.OutcomePlot.HandleMT,'Children'),'Visible','on');
+        cla(AxesHandles.HandleMT)
+        BpodSystem.GUIHandles.OutcomePlot.HistMT = histogram(AxesHandles.HandleMT,BpodSystem.Data.Custom.MT(~BpodSystem.Data.Custom.EarlyWithdrawal)*1000);
+        BpodSystem.GUIHandles.OutcomePlot.HistMT.BinWidth = 50;
+        BpodSystem.GUIHandles.OutcomePlot.HistMT.FaceColor = 'b';
+        BpodSystem.GUIHandles.OutcomePlot.HistMT.EdgeColor = 'none';
+        LeftBias = sum(BpodSystem.Data.Custom.ChoiceLeft==1)/sum(~isnan(BpodSystem.Data.Custom.ChoiceLeft),2);
+        cornertext(AxesHandles.HandleMT,sprintf('P=%1.2f',LeftBias))
 
 end
 
