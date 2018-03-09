@@ -23,6 +23,12 @@ switch Action
         xlabel(AxesHandles.HandleOutcome, 'Trial#', 'FontSize', 18);
         hold(AxesHandles.HandleOutcome, 'on');
 
+        %% GracePeriod histogram
+        hold(AxesHandles.HandleGracePeriod,'on')
+        AxesHandles.HandleGracePeriod.XLabel.String = 'Time (ms)';
+        AxesHandles.HandleGracePeriod.YLabel.String = 'trial counts';
+        AxesHandles.HandleGracePeriod.Title.String = 'GracePeriod duration';
+        
         %% Trial rate
         hold(AxesHandles.HandleTrialRate,'on')
         BpodSystem.GUIHandles.OutcomePlot.TrialRate = line(AxesHandles.HandleTrialRate,[0],[0], 'LineStyle','-','Color','k','Visible','on'); %#ok<NBRAK>
@@ -89,6 +95,17 @@ switch Action
             set(BpodSystem.GUIHandles.OutcomePlot.Jackpot, 'xdata', XData, 'ydata', YData);
         end
         
+        % GracePeriod
+        BpodSystem.GUIHandles.OutcomePlot.HandleGracePeriod.Visible = 'on';
+        set(get(BpodSystem.GUIHandles.OutcomePlot.HandleGracePeriod,'Children'),'Visible','on');
+        cla(AxesHandles.HandleGracePeriod)
+        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod = histogram(AxesHandles.HandleGracePeriod,BpodSystem.Data.Custom.GracePeriod(~isnan(BpodSystem.Data.Custom.GracePeriod))*1000);
+        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod.BinWidth = 50;
+        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod.FaceColor = 'b';
+        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod.EdgeColor = 'none';
+%         LeftBias = sum(BpodSystem.Data.Custom.ChoiceLeft==1)/sum(~isnan(BpodSystem.Data.Custom.ChoiceLeft),2);
+%         cornertext(AxesHandles.HandleMT,sprintf('Bias=%1.2f',LeftBias))
+        
         % Trial rate
         BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate.Visible = 'on';
         set(get(BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate,'Children'),'Visible','on');
@@ -123,7 +140,7 @@ switch Action
         BpodSystem.GUIHandles.OutcomePlot.HistMT.FaceColor = 'b';
         BpodSystem.GUIHandles.OutcomePlot.HistMT.EdgeColor = 'none';
         LeftBias = sum(BpodSystem.Data.Custom.ChoiceLeft==1)/sum(~isnan(BpodSystem.Data.Custom.ChoiceLeft),2);
-        cornertext(AxesHandles.HandleMT,sprintf('P=%1.2f',LeftBias))
+        cornertext(AxesHandles.HandleMT,sprintf('Bias=%1.2f',LeftBias))
 
 end
 

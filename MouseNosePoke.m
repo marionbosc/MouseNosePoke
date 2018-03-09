@@ -27,9 +27,10 @@ if isempty(fieldnames(TaskParameters))
     TaskParameters.GUI.EarlyWithdrawalTimeOut = 1;
     TaskParameters.GUI.EarlyWithdrawalNoise = true;
     TaskParameters.GUIMeta.EarlyWithdrawalNoise.Style='checkbox';
+    TaskParameters.GUI.GracePeriod = 0;
     TaskParameters.GUI.SampleTime = TaskParameters.GUI.MinSampleTime;
     TaskParameters.GUIMeta.SampleTime.Style = 'text';
-    TaskParameters.GUIPanels.Sampling = {'PlayStimulus','MinSampleTime','MaxSampleTime','AutoIncrSample','MinSampleIncr','MinSampleDecr','EarlyWithdrawalTimeOut','EarlyWithdrawalNoise','SampleTime'};
+    TaskParameters.GUIPanels.Sampling = {'PlayStimulus','MinSampleTime','MaxSampleTime','AutoIncrSample','MinSampleIncr','MinSampleDecr','EarlyWithdrawalTimeOut','EarlyWithdrawalNoise','GracePeriod','SampleTime'};
     %Reward
     TaskParameters.GUI.rewardAmount = 5;
     TaskParameters.GUI.Deplete = true;
@@ -54,6 +55,7 @@ BpodSystem.Data.Custom.EarlyWithdrawal(1) = false;
 BpodSystem.Data.Custom.Jackpot(1) = false;
 BpodSystem.Data.Custom.RewardMagnitude = [TaskParameters.GUI.rewardAmount,TaskParameters.GUI.rewardAmount];
 BpodSystem.Data.Custom.Rewarded = false;
+BpodSystem.Data.Custom.GracePeriod = 0;
 BpodSystem.Data.Custom = orderfields(BpodSystem.Data.Custom);
 %server data
 [~,BpodSystem.Data.Custom.Rig] = system('hostname');
@@ -83,10 +85,11 @@ end
 
 %% Initialize plots
 BpodSystem.ProtocolFigures.SideOutcomePlotFig = figure('Position', TaskParameters.Figures.OutcomePlot.Position,'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
-BpodSystem.GUIHandles.OutcomePlot.HandleOutcome = axes('Position',    [  .055          .15 .91 .3]);
-BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate = axes('Position',  [3*.05 + 2*.08   .6  .1  .3], 'Visible', 'off');
-BpodSystem.GUIHandles.OutcomePlot.HandleST = axes('Position',         [5*.05 + 4*.08   .6  .1  .3], 'Visible', 'off');
-BpodSystem.GUIHandles.OutcomePlot.HandleMT = axes('Position',         [6*.05 + 6*.08   .6  .1  .3], 'Visible', 'off');
+BpodSystem.GUIHandles.OutcomePlot.HandleOutcome = axes('Position',    [  .055            .15 .91 .3]);
+BpodSystem.GUIHandles.OutcomePlot.HandleGracePeriod = axes('Position',  [1*.05           .6  .1  .3], 'Visible', 'off');
+BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate = axes('Position',    [3*.05 + 2*.08   .6  .1  .3], 'Visible', 'off');
+BpodSystem.GUIHandles.OutcomePlot.HandleST = axes('Position',           [5*.05 + 4*.08   .6  .1  .3], 'Visible', 'off');
+BpodSystem.GUIHandles.OutcomePlot.HandleMT = axes('Position',           [6*.05 + 6*.08   .6  .1  .3], 'Visible', 'off');
 MouseNosePoke_PlotSideOutcome(BpodSystem.GUIHandles.OutcomePlot,'init');
 
 %% Main loop
@@ -164,6 +167,7 @@ else
 end
 
 sma = NewStateMatrix();
+sma = SetGlobalTimer(sma,1,TaskParameters.GUI.SampleTime);
 sma = AddState(sma, 'Name', 'state_0',...
     'Timer', 0,...
     'StateChangeConditions', {'Tup', 'wait_Cin'},...
@@ -174,8 +178,12 @@ sma = AddState(sma, 'Name', 'wait_Cin',...
     'OutputActions', {strcat('PWM',num2str(CenterPort)),255});
 sma = AddState(sma, 'Name', 'Cin',...
     'Timer', TaskParameters.GUI.SampleTime,...
-    'StateChangeConditions', {CenterPortOut, 'EarlyWithdrawal','Tup','stillSampling'},...
-    'OutputActions', StimStartOutput);
+    'StateChangeConditions', {CenterPortOut, 'GracePeriod','Tup','stillSampling'},...
+    'OutputActions', [StimStartOutput,{'GlobalTimerTrig',1}]);
+sma = AddState(sma, 'Name', 'GracePeriod',...
+    'Timer', TaskParameters.GUI.GracePeriod,...
+    'StateChangeConditions', {CenterPortIn, 'Cin','Tup','EarlyWithdrawal','GlobalTimer1_End','EarlyWithdrawal',LeftPortIn,'EarlyWithdrawal',RightPortIn,'EarlyWithdrawal'},...
+    'OutputActions',{});
 if TaskParameters.GUI.Jackpot
 sma = AddState(sma, 'Name', 'stillSampling',...
     'Timer', TaskParameters.GUI.JackpotTime-TaskParameters.GUI.SampleTime,...
@@ -249,6 +257,7 @@ global TaskParameters
 statesThisTrial = BpodSystem.Data.RawData.OriginalStateNamesByNumber{iTrial}(BpodSystem.Data.RawData.OriginalStateData{iTrial});
 BpodSystem.Data.Custom.ST(iTrial) = NaN;
 BpodSystem.Data.Custom.MT(iTrial) = NaN;
+BpodSystem.Data.Custom.GracePeriod(1:50,iTrial) = NaN(50,1);
 if any(strcmp('Cin',statesThisTrial))
     if any(strcmp('stillSampling',statesThisTrial))
         if any(strcmp('stillSamplingJackpot',statesThisTrial))
@@ -260,6 +269,14 @@ if any(strcmp('Cin',statesThisTrial))
             BpodSystem.Data.Custom.ST(iTrial) = diff(BpodSystem.Data.RawEvents.Trial{iTrial}.States.Cin);
     end
 end
+
+% Compute grace period:
+if any(strcmp('GracePeriod',statesThisTrial))
+    for nb_graceperiod =  1: size(BpodSystem.Data.RawEvents.Trial{iTrial}.States.GracePeriod,1)
+        BpodSystem.Data.Custom.GracePeriod(nb_graceperiod,iTrial) = (BpodSystem.Data.RawEvents.Trial{iTrial}.States.GracePeriod(nb_graceperiod,2)...
+            -BpodSystem.Data.RawEvents.Trial{iTrial}.States.GracePeriod(nb_graceperiod,1));
+    end
+end  
 
 if any(strncmp('water_L',statesThisTrial,7))
     BpodSystem.Data.Custom.ChoiceLeft(iTrial) = 1;
@@ -289,6 +306,7 @@ BpodSystem.Data.Custom.Jackpot(iTrial+1) = false;
 BpodSystem.Data.Custom.ST(iTrial+1) = NaN;
 BpodSystem.Data.Custom.MT(iTrial+1) = NaN;
 BpodSystem.Data.Custom.Rewarded(iTrial+1) = false;
+BpodSystem.Data.Custom.GracePeriod(1:50,iTrial+1) = NaN(50,1);
 
 %stimuli
 if ~BpodSystem.EmulatorMode
