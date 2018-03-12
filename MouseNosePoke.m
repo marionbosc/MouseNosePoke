@@ -392,7 +392,7 @@ catch
 end
 
 end
-
+blablabla
 function [RightClickTrain,LeftClickTrain]=getClickStimulus(time)
 rr = rand(1,1)*0.6+0.2;
 l = ceil(rr*100);
