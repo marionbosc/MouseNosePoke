@@ -274,7 +274,7 @@ global TaskParameters
 statesThisTrial = BpodSystem.Data.RawData.OriginalStateNamesByNumber{iTrial}(BpodSystem.Data.RawData.OriginalStateData{iTrial});
 BpodSystem.Data.Custom.ST(iTrial) = NaN;
 BpodSystem.Data.Custom.MT(iTrial) = NaN;
-BpodSystem.Data.Custom.GracePeriod(1:50,iTrial) = NaN(50,1);
+BpodSystem.Data.Custom.GracePeriod(1:1,iTrial) = NaN(1,1);
 if any(strcmp('Cin',statesThisTrial))
     if any(strcmp('stillSampling',statesThisTrial)) && any(strcmp('lat_Go_signal',statesThisTrial))==0
         if any(strcmp('stillSamplingJackpot',statesThisTrial))
@@ -327,7 +327,7 @@ BpodSystem.Data.Custom.ST(iTrial+1) = NaN;
 BpodSystem.Data.Custom.MT(iTrial+1) = NaN;
 BpodSystem.Data.Custom.Rewarded(iTrial+1) = false;
 BpodSystem.Data.Custom.CenterPortRewarded(iTrial+1) = false;
-BpodSystem.Data.Custom.GracePeriod(1:50,iTrial+1) = NaN(50,1);
+BpodSystem.Data.Custom.GracePeriod(1:1,iTrial+1) = NaN(1,1);
 
 %stimuli
 if ~BpodSystem.EmulatorMode
