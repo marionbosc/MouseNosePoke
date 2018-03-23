@@ -33,6 +33,7 @@ if isempty(fieldnames(TaskParameters))
     TaskParameters.GUIPanels.Sampling = {'PlayStimulus','MinSampleTime','MaxSampleTime','AutoIncrSample','MinSampleIncr','MinSampleDecr','EarlyWithdrawalTimeOut','EarlyWithdrawalNoise','GracePeriod','SampleTime'};
     %Reward
     TaskParameters.GUI.rewardAmount = 5;
+    TaskParameters.GUI.CenterPortRewAmount = 0.5;
     TaskParameters.GUI.Deplete = true;
     TaskParameters.GUIMeta.Deplete.Style = 'checkbox';
     TaskParameters.GUI.DepleteRate = 0.8;
@@ -42,7 +43,7 @@ if isempty(fieldnames(TaskParameters))
     TaskParameters.GUI.JackpotMin = 1;
     TaskParameters.GUI.JackpotTime = 1;
     TaskParameters.GUIMeta.JackpotTime.Style = 'text';
-        TaskParameters.GUIPanels.Reward = {'rewardAmount','Deplete','DepleteRate','Jackpot','JackpotMin','JackpotTime'};
+        TaskParameters.GUIPanels.Reward = {'rewardAmount','CenterPortRewAmount','Deplete','DepleteRate','Jackpot','JackpotMin','JackpotTime'};
     TaskParameters.GUI = orderfields(TaskParameters.GUI);
     TaskParameters.Figures.OutcomePlot.Position = [200, 200, 1000, 400];
 end
@@ -54,6 +55,7 @@ BpodSystem.Data.Custom.SampleTime(1) = TaskParameters.GUI.MinSampleTime;
 BpodSystem.Data.Custom.EarlyWithdrawal(1) = false;
 BpodSystem.Data.Custom.Jackpot(1) = false;
 BpodSystem.Data.Custom.RewardMagnitude = [TaskParameters.GUI.rewardAmount,TaskParameters.GUI.rewardAmount];
+BpodSystem.Data.Custom.CenterPortRewAmount =TaskParameters.GUI.CenterPortRewAmount;
 BpodSystem.Data.Custom.Rewarded = false;
 BpodSystem.Data.Custom.CenterPortRewarded = false;
 BpodSystem.Data.Custom.GracePeriod = 0;
@@ -138,7 +140,7 @@ CenterValve = 2^(CenterPort-1);
 RightValve = 2^(RightPort-1);
 
 LeftValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,1), LeftPort);
-CenterValveTime  = GetValveTimes(0.5, CenterPort); % 0.5 microL of reward in CenterPort after the SampleTime is completed
+CenterValveTime  = GetValveTimes(BpodSystem.Data.Custom.CenterPortRewAmount(iTrial), LeftPort);
 RightValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,2), RightPort);
 
 if TaskParameters.GUI.Jackpot == 3 % Decremental Jackpot reward
@@ -367,6 +369,9 @@ elseif isnan(BpodSystem.Data.Custom.ChoiceLeft(iTrial)) && TaskParameters.GUI.De
 else
     BpodSystem.Data.Custom.RewardMagnitude(iTrial+1,:) = [TaskParameters.GUI.rewardAmount,TaskParameters.GUI.rewardAmount];
 end
+
+%center port reward amount
+BpodSystem.Data.Custom.CenterPortRewAmount(iTrial+1) =TaskParameters.GUI.CenterPortRewAmount;
 
 %increase sample time
 if TaskParameters.GUI.AutoIncrSample
