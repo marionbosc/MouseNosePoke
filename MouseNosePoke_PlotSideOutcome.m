@@ -58,14 +58,15 @@ switch Action
         
         %Cumulative Reward Amount
         R = BpodSystem.Data.Custom.RewardMagnitude;
-        CRR = repmat(0.5,1,size(R,2));
+%         CRRtmp = repmat(  BpodSystem.Data.Custom.CenterPortRewAmount(end),1,size(R,2));
         ndxRwd = BpodSystem.Data.Custom.Rewarded;
         ndxCPRwd = BpodSystem.Data.Custom.CenterPortRewarded;    
         C = zeros(size(R)); C(BpodSystem.Data.Custom.ChoiceLeft==1&ndxRwd,1) = 1; C(BpodSystem.Data.Custom.ChoiceLeft==0&ndxRwd,2) = 1;
-        CCP = zeros(size(CRR));CCP(BpodSystem.Data.Custom.ChoiceLeft==1&ndxCPRwd,1) = 1;
+%         CCP = zeros(size(CRRtmp));CCP(BpodSystem.Data.Custom.ChoiceLeft==1&ndxCPRwd,1) = 1;
         R = R.*C;
-        CRR = CRR.*CCP; 
-        R = round(sum([sum(R(:)) sum(CRR(:))]));
+%         CRR = CRRtmp.*CCP;
+        CRR = sum(ndxCPRwd).* BpodSystem.Data.Custom.CenterPortRewAmount(end);
+        R = round(sum(R(:)) + sum(CRR(:)));
         set(BpodSystem.GUIHandles.OutcomePlot.CumRwd, 'position', [CurrentTrial+1 1], 'string', ...
             [num2str(R) ' microL']);
         clear R C
@@ -104,17 +105,17 @@ switch Action
         BpodSystem.GUIHandles.OutcomePlot.HandleGracePeriod.Visible = 'on';
         set(get(BpodSystem.GUIHandles.OutcomePlot.HandleGracePeriod,'Children'),'Visible','on');
         cla(AxesHandles.HandleGracePeriod)
-        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod = histogram(AxesHandles.HandleGracePeriod,BpodSystem.Data.Custom.GracePeriod(~isnan(BpodSystem.Data.Custom.GracePeriod)&~BpodSystem.Data.Custom.EarlyWithdrawal)*1000);
+        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod = histogram(AxesHandles.HandleGracePeriod,BpodSystem.Data.Custom.GracePeriod(~isnan(BpodSystem.Data.Custom.GracePeriod)&~repmat(BpodSystem.Data.Custom.EarlyWithdrawal,50,1))*1000);
         BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod.BinWidth = 50;
         BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod.FaceColor = 'g';
         BpodSystem.GUIHandles.OutcomePlot.HistGracePeriod.EdgeColor = 'none';
-        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriodEWD = histogram(AxesHandles.HandleGracePeriod,BpodSystem.Data.Custom.GracePeriod(~isnan(BpodSystem.Data.Custom.GracePeriod)&BpodSystem.Data.Custom.EarlyWithdrawal)*1000);
+        BpodSystem.GUIHandles.OutcomePlot.HistGracePeriodEWD = histogram(AxesHandles.HandleGracePeriod,BpodSystem.Data.Custom.GracePeriod(~isnan(BpodSystem.Data.Custom.GracePeriod)&repmat(BpodSystem.Data.Custom.EarlyWithdrawal,50,1))*1000);
         BpodSystem.GUIHandles.OutcomePlot.HistGracePeriodEWD.BinWidth = 50;
         BpodSystem.GUIHandles.OutcomePlot.HistGracePeriodEWD.FaceColor = 'r';
         BpodSystem.GUIHandles.OutcomePlot.HistGracePeriodEWD.EdgeColor = 'none';
 %         LeftBias = sum(BpodSystem.Data.Custom.ChoiceLeft==1)/sum(~isnan(BpodSystem.Data.Custom.ChoiceLeft),2);
 %         cornertext(AxesHandles.HandleMT,sprintf('Bias=%1.2f',LeftBias))
-        
+
         % Trial rate
         BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate.Visible = 'on';
         set(get(BpodSystem.GUIHandles.OutcomePlot.HandleTrialRate,'Children'),'Visible','on');
