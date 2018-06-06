@@ -34,6 +34,7 @@ if isempty(fieldnames(TaskParameters))
     %Reward
     TaskParameters.GUI.rewardAmount = 5;
     TaskParameters.GUI.CenterPortRewAmount = 0.5;
+    TaskParameters.GUI.CenterPortProb = 1;
     TaskParameters.GUI.Deplete = true;
     TaskParameters.GUIMeta.Deplete.Style = 'checkbox';
     TaskParameters.GUI.DepleteRate = 0.8;
@@ -43,7 +44,7 @@ if isempty(fieldnames(TaskParameters))
     TaskParameters.GUI.JackpotMin = 1;
     TaskParameters.GUI.JackpotTime = 1;
     TaskParameters.GUIMeta.JackpotTime.Style = 'text';
-        TaskParameters.GUIPanels.Reward = {'rewardAmount','CenterPortRewAmount','Deplete','DepleteRate','Jackpot','JackpotMin','JackpotTime'};
+        TaskParameters.GUIPanels.Reward = {'rewardAmount','CenterPortRewAmount','CenterPortProb','Deplete','DepleteRate','Jackpot','JackpotMin','JackpotTime'};
     TaskParameters.GUI = orderfields(TaskParameters.GUI);
     TaskParameters.Figures.OutcomePlot.Position = [200, 200, 1000, 400];
 end
@@ -140,7 +141,11 @@ CenterValve = 2^(CenterPort-1);
 RightValve = 2^(RightPort-1);
 
 LeftValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,1), LeftPort);
-CenterValveTime  = GetValveTimes(BpodSystem.Data.Custom.CenterPortRewAmount(iTrial), LeftPort);
+if rand(1,1) <= TaskParameters.GUI.CenterPortProb
+    CenterValveTime  = GetValveTimes(BpodSystem.Data.Custom.CenterPortRewAmount(iTrial), LeftPort);
+else
+    CenterValveTime=0;
+end
 RightValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,2), RightPort);
 
 if TaskParameters.GUI.Jackpot == 3 % Decremental Jackpot reward
