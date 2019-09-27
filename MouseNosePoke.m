@@ -148,6 +148,11 @@ else
 end
 RightValveTime  = GetValveTimes(BpodSystem.Data.Custom.RewardMagnitude(iTrial,2), RightPort);
 
+% Control that valve time has not a negative value:
+if LeftValveTime<0; LeftValveTime=0; end 
+if CenterValveTime<0; CenterValveTime=0; end 
+if RightValveTime<0; RightValveTime=0; end 
+
 if TaskParameters.GUI.Jackpot == 3 % Decremental Jackpot reward
     JackpotFactor = max(2,10 - sum(BpodSystem.Data.Custom.Jackpot)); 
 else 
