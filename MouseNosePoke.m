@@ -389,8 +389,8 @@ BpodSystem.Data.Custom.CenterPortRewAmount(iTrial+1) =TaskParameters.GUI.CenterP
 
 %increase sample time
 if TaskParameters.GUI.AutoIncrSample
-    History = 50; % Rat: History = 50
-    Crit = 0.8; % Rat: Crit = 0.8
+    History = 10; % Rat: History = 50
+    Crit = 0.7; % Rat: Crit = 0.8
     if iTrial<5
         ConsiderTrials = iTrial;
     else
